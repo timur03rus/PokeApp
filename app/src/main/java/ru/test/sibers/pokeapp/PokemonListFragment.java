@@ -7,9 +7,16 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+
+import com.mancj.materialsearchbar.MaterialSearchBar;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
@@ -22,12 +29,18 @@ import ru.test.sibers.pokeapp.client.RetrofitClient;
 import ru.test.sibers.pokeapp.common.Common;
 import ru.test.sibers.pokeapp.common.ItemOffsetDecoration;
 import ru.test.sibers.pokeapp.model.Pokedex;
+import ru.test.sibers.pokeapp.model.Pokemon;
 
 public class PokemonListFragment extends Fragment {
 
     IPokemonDex mIPokemonDex;
     CompositeDisposable mCompositeDisposable = new CompositeDisposable();
     RecyclerView mRecyclerViewPokemonList;
+
+    PokemonListAdapter adapter, searchAdapter;
+    List<String> lastSuggest = new ArrayList<>();
+
+    MaterialSearchBar mSearchBar;
 
     static PokemonListFragment instance;
 
@@ -55,9 +68,67 @@ public class PokemonListFragment extends Fragment {
         ItemOffsetDecoration itemOffsetDecoration = new ItemOffsetDecoration(getActivity(), R.dimen.spacing);
         mRecyclerViewPokemonList.addItemDecoration(itemOffsetDecoration);
 
+        //Setup search bar
+        mSearchBar = view.findViewById(R.id.search_bar);
+        mSearchBar.setHint("Enter Pokemon name");
+        mSearchBar.setCardViewElevation(10);
+        mSearchBar.addTextChangeListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                List<String> suggest = new ArrayList<>();
+                for (String search :
+                        lastSuggest) {
+                    if (search.toLowerCase().contains(mSearchBar.getText().toLowerCase()))
+                        suggest.add(search);
+
+                    mSearchBar.setLastSuggestions(suggest);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        });
+        mSearchBar.setOnSearchActionListener(new MaterialSearchBar.OnSearchActionListener() {
+            @Override
+            public void onSearchStateChanged(boolean enabled) {
+                if (!enabled)
+                    mRecyclerViewPokemonList.setAdapter(adapter);
+            }
+
+            @Override
+            public void onSearchConfirmed(CharSequence text) {
+                startSearch(text);
+            }
+
+            @Override
+            public void onButtonClicked(int buttonCode) {
+
+            }
+        });
+
         fetchData();
 
         return view;
+    }
+
+    private void startSearch(CharSequence text) {
+        if (Common.commonPokemonList.size() > 0) {
+            List<Pokemon> result = new ArrayList<>();
+            for (Pokemon pokemon :
+                    Common.commonPokemonList) {
+                if (pokemon.getName().toLowerCase().contains(text.toString().toLowerCase()))
+                    result.add(pokemon);
+                searchAdapter = new PokemonListAdapter(getActivity(), result);
+                mRecyclerViewPokemonList.setAdapter(searchAdapter);
+            }
+        }
     }
 
     private void fetchData() {
@@ -68,9 +139,17 @@ public class PokemonListFragment extends Fragment {
                     @Override
                     public void accept(Pokedex pokedex) throws Exception {
                         Common.commonPokemonList = pokedex.getPokemonList();
-                        PokemonListAdapter adapter = new PokemonListAdapter(getActivity(), Common.commonPokemonList);
+                        adapter = new PokemonListAdapter(getActivity(), Common.commonPokemonList);
 
                         mRecyclerViewPokemonList.setAdapter(adapter);
+
+                        lastSuggest.clear();
+                        for (Pokemon pokemon :
+                                Common.commonPokemonList) {
+                            lastSuggest.add(pokemon.getName());
+                        }
+                        mSearchBar.setVisibility(View.VISIBLE);
+                        mSearchBar.setLastSuggestions(lastSuggest);
                     }
                 })
         );

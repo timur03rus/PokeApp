@@ -1,11 +1,13 @@
 package ru.test.sibers.pokeapp.adapter;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.robertlevonyan.views.chip.Chip;
@@ -60,11 +62,6 @@ public class PokemonEvolutionAdapter extends RecyclerView.Adapter<PokemonEvoluti
     public class PokemonEvolutionViewHolder extends RecyclerView.ViewHolder {
 
         Chip chip;
-        IItemClickListener mIItemClickListener;
-
-        public void setIItemClickListener(IItemClickListener IItemClickListener) {
-            mIItemClickListener = IItemClickListener;
-        }
 
         public PokemonEvolutionViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -72,7 +69,9 @@ public class PokemonEvolutionAdapter extends RecyclerView.Adapter<PokemonEvoluti
             chip.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    mIItemClickListener.onClick(v, getAdapterPosition());
+                    LocalBroadcastManager.getInstance(mContext)
+                            .sendBroadcast(new Intent(Common.KEY_NUM_EVOLUTION)
+                                    .putExtra("num", mEvolutions.get(getAdapterPosition()).getNum()));
                 }
             });
         }

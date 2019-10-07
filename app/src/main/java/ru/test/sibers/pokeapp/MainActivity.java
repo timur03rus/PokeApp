@@ -29,9 +29,9 @@ public class MainActivity extends AppCompatActivity {
                 getSupportActionBar().setDisplayShowHomeEnabled(true);
 
                 Fragment detailFragment = PokemonDetailFragment.getInstance();
-                int position = intent.getIntExtra("position", -1);
+                String num = intent.getStringExtra("num");
                 Bundle bundle = new Bundle();
-                bundle.putInt("position", position);
+                bundle.putString("num", num);
                 detailFragment.setArguments(bundle);
 
                 FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
@@ -39,7 +39,30 @@ public class MainActivity extends AppCompatActivity {
                 fragmentTransaction.addToBackStack("detail");
                 fragmentTransaction.commit();
 
-                Pokemon pokemon = Common.commonPokemonList.get(position);
+                Pokemon pokemon = Common.findPokemonByNum(num);
+                mToolbar.setTitle(pokemon.getName());
+            }
+        }
+    };
+
+    BroadcastReceiver showEvolution = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent.getAction().equals(Common.KEY_NUM_EVOLUTION)) {
+
+                Fragment detailFragment = PokemonDetailFragment.getInstance();
+                Bundle bundle = new Bundle();
+                String num = intent.getStringExtra("num");
+                bundle.putString("num", num);
+                detailFragment.setArguments(bundle);
+
+                FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+                fragmentTransaction.remove(detailFragment);
+                fragmentTransaction.replace(R.id.pokemon_list_recyclerview, detailFragment);
+                fragmentTransaction.addToBackStack("detail");
+                fragmentTransaction.commit();
+
+                Pokemon pokemon = Common.findPokemonByNum(num);
                 mToolbar.setTitle(pokemon.getName());
             }
         }
@@ -57,6 +80,9 @@ public class MainActivity extends AppCompatActivity {
         //Register broadcast
         LocalBroadcastManager.getInstance(this)
                 .registerReceiver(showDetail, new IntentFilter(Common.KEY_ENABLE_HOME));
+
+        LocalBroadcastManager.getInstance(this)
+                .registerReceiver(showEvolution, new IntentFilter(Common.KEY_NUM_EVOLUTION));
     }
 
     @Override

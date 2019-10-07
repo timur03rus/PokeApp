@@ -74,7 +74,7 @@ public class PokemonListAdapter extends RecyclerView.Adapter<PokemonListAdapter.
             @Override
             public void onClick(View view, int position) {
                 LocalBroadcastManager.getInstance(mContext)
-                        .sendBroadcast(new Intent(Common.KEY_ENABLE_HOME).putExtra("position", position));
+                        .sendBroadcast(new Intent(Common.KEY_ENABLE_HOME).putExtra("num", mPokemonList.get(position).getNum()));
             }
         });
     }
